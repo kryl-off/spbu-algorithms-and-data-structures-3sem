@@ -6,3 +6,4 @@ venv/
 .venv
 #files
 otus.txt
+laba1/__pycache__
