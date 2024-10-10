@@ -11,7 +11,7 @@ fake = faker.Faker('ru.RU')
 initial_time = datetime(2024, 9, 27, 0, 0)
 end_time = initial_time + relativedelta(days=2)
 
-train_dictionary_df = pd.read_excel('data/trainsbook10.xlsx')
+train_dictionary_df = pd.read_excel('data/trainsbook.xlsx')
 
 ticket_data=[]
 cards_array=[]
