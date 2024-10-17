@@ -4,12 +4,12 @@ from dateutil.relativedelta import relativedelta
 
 
 
-with open('data/dictionary_p_male.txt') as file: m_surname = file.read().split()
-with open('data/dictionary_p_female.txt') as file: f_surname = file.read().split()
-with open('data/dictionary_fn_male.txt') as file: m_first_name = file.read().split()
-with open('data/dictionary_fn_female.txt') as file: f_first_name = file.read().split()
-with open('data/dictionary_ln_male.txt') as file: m_last_name = file.read().split()
-with open('data/dictionary_ln_female.txt') as file: f_last_name = file.read().split()
+with open('../data/dictionary_p_male.txt') as file: m_surname = file.read().split()
+with open('../data/dictionary_p_female.txt') as file: f_surname = file.read().split()
+with open('../data/dictionary_fn_male.txt') as file: m_first_name = file.read().split()
+with open('../data/dictionary_fn_female.txt') as file: f_first_name = file.read().split()
+with open('../data/dictionary_ln_male.txt') as file: m_last_name = file.read().split()
+with open('../data/dictionary_ln_female.txt') as file: f_last_name = file.read().split()
 
 def bank_card(bank_system_probability, bank_probability):
     digit_list = {
@@ -127,19 +127,19 @@ class Route:#предположим, с одним номером существ
                             "Паспорт": man.passport,
                             "Откуда": self.original,
                             "Куда": self.destination,
-                            "Дата отъезда": self.position.strftime("%Y-%m-%dT%H:%M"),
-                            "Дата приезда": self.destination_time.strftime("%Y-%m-%dT%H:%M"),
+                            "Дата отъезда": self.position,
+                            "Дата приезда": self.destination_time, #"%Y-%m-%dT%H:%M"
                             "Рейс": self.number,
                             "Выбор вагона и места": str(vag_number) + '-' + str(l+1),
-                            "Стоимость": str(((v.price//10)*(self.roadtime)))+' руб',
+                            "Стоимость": str(((v.price//10)*(self.roadtime))),
                             "Карта оплаты": man.card
                         })
 class Person:
     def __init__(self,sys_prob, bank_prob):
         if (random.randint(1, 2) == 1):
-            self.name = random.choice(m_last_name) + ' ' + random.choice(m_first_name) + ' ' + random.choice(m_surname)
+            self.name = 'М, ' + random.choice(m_last_name) + ' ' + random.choice(m_first_name) + ' ' + random.choice(m_surname)
         else:
-            self.name = random.choice(f_last_name) + ' ' + random.choice(f_first_name) + ' ' + random.choice(f_surname)
+            self.name = 'Ж, ' + random.choice(f_last_name) + ' ' + random.choice(f_first_name) + ' ' + random.choice(f_surname)
 
         self.card = bank_card(sys_prob, bank_prob)
         self.passport = f"{random.randint(1000, 9999)} {random.randint(100000, 999999)}"
@@ -147,33 +147,39 @@ class Vagon:
     def __init__(self, type):
         self.vagon_data = {
             #a) Поезда «Сапсан»
-            'a_1': {'size': 1, 'price': 100000, 'naming': '1P'}, # (1) 1Р — купе-переговорная, продаётся только целиком
-            'a_2': {'size': 14, 'price': 30000, 'naming': '1B'}, # (2) 1В — просто места в вагоне 1 класса, без переговорной
-            'a_3': {'size': 30, 'price': 20000, 'naming': '1C'}, # (3) 1С — вагон бизнес-класса
-            'a_4': {'size': 40, 'price': 8000, 'naming': '2C'}, # (4) 2С — сидячий вагон эконом-класса
-            'a_5': {'size': 50, 'price': 5000, 'naming': '2B'}, # 5) 2В — класс «Экономический+» (вагон № 10 и № 20)
-            'a_6': {'size': 12, 'price': 6500, 'naming': '2E'}, # (6) 2E — места в вагоне-бистро
+            'a_1': {'size': 1, 'price': 100000, 'naming': '1P'},  # (1) 1Р — купе-переговорная, продаётся только целиком
+            'a_2': {'size': 14, 'price': 31000, 'naming': '1B'},  # (2) 1В — просто места в вагоне 1 класса, без переговорной
+            'a_3': {'size': 30, 'price': 21000, 'naming': '1C'},  # (3) 1С — вагон бизнес-класса
+            'a_4': {'size': 40, 'price': 8200, 'naming': '2C'},  # (4) 2С — сидячий вагон эконом-класса
+            'a_5': {'size': 50, 'price': 5200, 'naming': '2B'},  # (5) 2В — класс «Экономический+»
+            'a_6': {'size': 12, 'price': 6700, 'naming': '2E'},  # (6) 2E — места в вагоне-бистро
+
             # b) Поезда «Стриж»
-            'b_1': {'size': 16, 'price': 30000, 'naming': '1E'}, # (1) 1Е — СВ (VIP). Продаётся купе целиком, в нём могут ехать 1 или 2 пассажира.
-            'b_2': {'size': 40, 'price': 12000, 'naming': '1P'}, # (2) 1Р — сидячие вагоны 1 класса.
-            'b_3': {'size': 50, 'price': 5000, 'naming': '2C'}, # (3) 2С — сидячие вагоны 2 класса.
+            'b_1': {'size': 16, 'price': 32000, 'naming': '1E'},  # (1) 1Е — СВ (VIP). Продаётся купе целиком.
+            'b_2': {'size': 40, 'price': 12500, 'naming': '1P'},  # (2) 1Р — сидячие вагоны 1 класса.
+            'b_3': {'size': 50, 'price': 5300, 'naming': '2C'},  # (3) 2С — сидячие вагоны 2 класса.
+
             # c) Сидячий вагон
-            'c_1': {'size': 81, 'price': 1000, 'naming': '1C'}, # (1) 1С - обычные сидячие места
-            'c_2': {'size': 36, 'price': 2000, 'naming': '1P'}, # (2) 1Р — в двухэтажном сидячем вагоне так маркируются места в купе
-            'c_3': {'size': 1, 'price': 100000, 'naming': '1B'}, # (3) 1В — вагон с индивидуальным размещением, то есть выкупаются все места.
-            'c_4': {'size': 81, 'price': 2500, 'naming': '2P'}, # (4) 2Р — вагон повышенной комфортности
-            'c_5': {'size': 81, 'price': 1000, 'naming': '2E'}, # (5) 2Е — сидячий вагон
+            'c_1': {'size': 81, 'price': 1050, 'naming': '1C'},  # (1) 1С - обычные сидячие места
+            'c_2': {'size': 36, 'price': 2100, 'naming': '1P'},  # (2) 1Р — в двухэтажном сидячем вагоне места в купе
+            'c_3': {'size': 1, 'price': 101000, 'naming': '1B'},  # (3) 1В — вагон с индивидуальным размещением
+            'c_4': {'size': 81, 'price': 2600, 'naming': '2P'},  # (4) 2Р — вагон повышенной комфортности
+            'c_5': {'size': 81, 'price': 1100, 'naming': '2E'},  # (5) 2Е — сидячий вагон
+
             # d) Плацкартные вагоны
-            'd_1': {'size': 54, 'price': 3500, 'naming': '3Э'}, # (1) 3Э — плацкартный вагон
+            'd_1': {'size': 54, 'price': 3600, 'naming': '3Э'},  # (1) 3Э — плацкартный вагон
+
             # e) Купе
-            'e_1': {'size': 36, 'price': 4000, 'naming': '2Э'}, # (1) 2Э — кондиционируемый вагон повышенной комфортности с 4-местными купе.
+            'e_1': {'size': 36, 'price': 4200, 'naming': '2Э'},  # (1) 2Э — кондиционируемый вагон с 4-местными купе.
+
             # f) Люкс (СВ)
-            'f_1': {'size': 18, 'price': 18000, 'naming': '1Б'}, # (1) 1Б — бизнес-класс.
-            'f_2': {'size': 18, 'price': 11000, 'naming': '1Л'}, # (2) 1Л — вагон СВ.
+            'f_1': {'size': 18, 'price': 18500, 'naming': '1Б'},  # (1) 1Б — бизнес-класс.
+            'f_2': {'size': 18, 'price': 11500, 'naming': '1Л'},  # (2) 1Л — вагон СВ.
+
             # g) Мягкий вагон
-            'g_1': {'size': 16, 'price': 8000, 'naming': '1A'}, # (1) 1А — вагон состоит из 4 купе и салона-бара.
-            'g_2': {'size': 16, 'price': 8000, 'naming': '1И'} # (1) 1А — вагон состоит из 4 купе и салона-бара.
-        }
+            'g_1': {'size': 16, 'price': 8500, 'naming': '1A'},  # (1) 1А — вагон состоит из 4 купе и салона-бара.
+            'g_2': {'size': 16, 'price': 8700, 'naming': '1И'}  # (1) 1И — вагон состоит из 4 купе и салона-бара.
+            }
 
         if type in self.vagon_data:
             data = self.vagon_data[type]
