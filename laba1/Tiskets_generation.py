@@ -30,7 +30,7 @@ for n in range(1,len(train_dictionary_df)):
 df = pd.DataFrame(ticket_data)
 #Запись в Excel таблицу
 df.to_excel('../data/Tickets.xlsx', index=False)
-
+df.to_excel('../data/Tickets_anon.xlsx', index=False)
 
 app.show_info('Данные сгенерированы, программа отработала штатно. Датасет сохранен в Tickets.xlsx')
 
