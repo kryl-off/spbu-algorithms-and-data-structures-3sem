@@ -35,12 +35,11 @@ def get_checked_items():
         checked_items.append("Карта оплаты")
 
     return checked_items
-def set_entries(values):
-    print(values)
+def set_entries(values, l):
     for i in range(1,len(values)+1):
         entries[i].config(state='normal')
         entries[i].delete(0, tk.END)
-        entries[i].insert(0, str(values[i-1]))
+        entries[i].insert(0, f"{(values[i-1])} ({round((float(values[i-1])/l),5)})")
         entries[i].config(state='readonly')
     return 0
 
@@ -62,9 +61,10 @@ def calculation():
     identifiers = get_checked_items()
     if (identifiers != []):
         df = open_anon()
+        l = len(df)
         df_suppressed, suppressed_count = utils2.suppress(df, identifiers, 4000)
         k,top_bad = utils2.calculate_k_anonymity(df_suppressed, identifiers)
-        set_entries(top_bad)
+        set_entries(top_bad, l)
         entries[7].config(state='normal')
         entries[7].delete(0, tk.END)
         entries[7].insert(0, f"k = {k}")
