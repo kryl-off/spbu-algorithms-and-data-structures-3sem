@@ -98,7 +98,7 @@ sha3_start_time = time.time()
 os.system('hashcat -m 17400 -a 3 -o ../data/laba3/cracked_sha3_hashes.txt ../data/laba3/sha3_hashes.txt 89\?d\?d\?d\?d\?d\?d\?d\?d\?d --potfile-disable')
 sha3_end_time = time.time()
 
-print(salt)
+print("Найденная соль: " + str(salt))
 print(f"Время расшифровки исходного датасета: {main_end_time - main_start_time:.6f} секунд")
 print(f"Время расшифровки исходного датасета и вычисления соли: {main2_end_time - main_start_time:.6f} секунд")
 print(f"Время вычисления соли: {main2_end_time - main_end_time:.6f} секунд")
@@ -107,3 +107,11 @@ print(f"Время нахождения деобезличенного дата�
 print(f"Время расшифровки sha1 датасета и вычисления соли: {sha1_end_time - sha1_start_time:.6f} секунд")
 print(f"Время расшифровки sha256 датасета и вычисления соли: {sha256_end_time - sha256_start_time:.6f} секунд")
 print(f"Время расшифровки sha3 датасета и вычисления соли: {sha3_end_time - sha3_start_time:.6f} секунд")
+
+def test_time(salt, title,file_in_name, file_out_name):
+    start_time = time.time()
+    with open(file_out_name, 'w') as file:
+        pass
+    os.system(
+        f'hashcat -m 17400 -a 3 -o {file_in_name} {file_out_name} 89\?d\?d\?d\?d\?d\?d\?d\?d\?d --potfile-disable')
+    end_time = time.time()
