@@ -1,7 +1,9 @@
 import os
 import time
 import hashlib
-#hashcat -m 0 -a 3 -o cracked_hashes.txt hashes.txt 89\?d\?d\?d\?d\?d\?d\?d\?d\?d --potfile-disable
+import random
+import string
+#hashcat -m 0 -a 3 -o cracked_hashes.txt hashes.txt 89\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d --potfile-disable
 def clean(input_file, output_file):
     with open(input_file, "r") as infile:
         with open(output_file, "w") as outfile:
@@ -29,6 +31,64 @@ def found_salt(phones, phones_with_salt):
         if counter == len(phones):
             break
     return salt
+def test_salt_effectiveness(phones_wo_salt, salt):
+    salt_types = ['numeric', 'alphabetic', 'mixed']
+    salt_lengths = range(5, 7)
+
+    times_per_salt = {}
+
+    for salt_type in salt_types:
+        for length in salt_lengths:
+            test_salt = generate_salt(salt_type, length)
+
+            with open("../data/laba3/sha1_test_hashes.txt", 'w') as sha1_file, \
+                 open("../data/laba3/sha256_test_hashes.txt", 'w') as sha256_file, \
+                 open("../data/laba3/sha3_test_hashes.txt", 'w') as sha3_file:
+
+                for x in phones_wo_salt:
+                    sha1_file.write(hashlib.sha1((str(x) + str(test_salt)).encode()).hexdigest() + "\n")
+                    sha256_file.write(hashlib.sha256((str(x) + str(test_salt)).encode()).hexdigest() + "\n")
+                    sha3_file.write(hashlib.sha3_256((str(x) + str(test_salt)).encode()).hexdigest() + "\n")
+
+            sha1_start_time = time.time()
+            os.system('hashcat -m 100 -a 3 -o ../data/laba3/cracked_sha1_test_hashes.txt ../data/laba3/sha1_test_hashes.txt 89\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d --potfile-disable')
+            sha1_end_time = time.time()
+
+            sha256_start_time = time.time()
+            os.system('hashcat -m 1400 -a 3 -o ../data/laba3/cracked_sha256_test_hashes.txt ../data/laba3/sha256_test_hashes.txt 89\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d --potfile-disable')
+            sha256_end_time = time.time()
+
+            sha3_start_time = time.time()
+            os.system('hashcat -m 17400 -a 3 -o ../data/laba3/cracked_sha3_test_hashes.txt ../data/laba3/sha3_test_hashes.txt 89\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d --potfile-disable')
+            sha3_end_time = time.time()
+
+            times_per_salt[f"{salt_type}_{length}"] = {
+                "SHA-1": sha1_end_time - sha1_start_time,
+                "SHA-256": sha256_end_time - sha256_start_time,
+                "SHA-3": sha3_end_time - sha3_start_time
+            }
+
+    return times_per_salt
+def display_test_results(results):
+    print("\nРезультаты тестирования:\n")
+    print(f"{'Тип соли':<15}{'Длина соли':<15}{'SHA-1 (сек.)':<15}{'SHA-256 (сек.)':<15}{'SHA-3 (сек.)':<15}")
+    print("-" * 75)
+
+    for salt_key, times in results.items():
+        salt_type, salt_length = salt_key.split("_")
+        sha1_time = times["SHA-1"]
+        sha256_time = times["SHA-256"]
+        sha3_time = times["SHA-3"]
+        print(f"{salt_type:<15}{salt_length:<15}{sha1_time:<15.6f}{sha256_time:<15.6f}{sha3_time:<15.6f}")
+def generate_salt(salt_type, length):
+    if salt_type == 'numeric':
+        return ''.join(random.choices(string.digits, k=length))
+    elif salt_type == 'alphabetic':
+        return ''.join(random.choices(string.ascii_letters, k=length))
+    elif salt_type == 'mixed':
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+
 
 f = open("../data/laba3/phones.txt")
 phones = []
@@ -48,7 +108,7 @@ with open("../data/laba3/cracked_hashes.txt", 'w') as file:
 
 
 main_start_time = time.time()
-os.system('hashcat -m 0 -a 3 -o ../data/laba3/cracked_hashes.txt ../data/laba3/hashes.txt 89\?d\?d\?d\?d\?d\?d\?d\?d\?d --potfile-disable')
+os.system('hashcat -m 0 -a 3 -o ../data/laba3/cracked_hashes.txt ../data/laba3/hashes.txt 89\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d --potfile-disable')
 main_end_time = time.time()
 
 phones_with_salt_a = open("../data/laba3/cracked_hashes.txt").read().split()
@@ -87,17 +147,21 @@ with open("../data/laba3/sha3_hashes.txt", 'w') as file:
 
 
 sha1_start_time = time.time()
-os.system('hashcat -m 100 -a 3 -o ../data/laba3/cracked_sha1_hashes.txt ../data/laba3/sha1_hashes.txt 89\?d\?d\?d\?d\?d\?d\?d\?d\?d --potfile-disable')
+os.system('hashcat -m 100 -a 3 -o ../data/laba3/cracked_sha1_hashes.txt ../data/laba3/sha1_hashes.txt 89\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d --potfile-disable')
 sha1_end_time = time.time()
 
 sha256_start_time = time.time()
-os.system('hashcat -m 1400 -a 3 -o ../data/laba3/cracked_sha256_hashes.txt ../data/laba3/sha256_hashes.txt 89\?d\?d\?d\?d\?d\?d\?d\?d\?d --potfile-disable')
+os.system('hashcat -m 1400 -a 3 -o ../data/laba3/cracked_sha256_hashes.txt ../data/laba3/sha256_hashes.txt 89\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d --potfile-disable')
 sha256_end_time = time.time()
 
 sha3_start_time = time.time()
-os.system('hashcat -m 17400 -a 3 -o ../data/laba3/cracked_sha3_hashes.txt ../data/laba3/sha3_hashes.txt 89\?d\?d\?d\?d\?d\?d\?d\?d\?d --potfile-disable')
+os.system('hashcat -m 17400 -a 3 -o ../data/laba3/cracked_sha3_hashes.txt ../data/laba3/sha3_hashes.txt 89\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d\\?d --potfile-disable')
 sha3_end_time = time.time()
 
+
+
+
+test_results = test_salt_effectiveness(phones_wo_salt, salt)
 print("Найденная соль: " + str(salt))
 print(f"Время расшифровки исходного датасета: {main_end_time - main_start_time:.6f} секунд")
 print(f"Время расшифровки исходного датасета и вычисления соли: {main2_end_time - main_start_time:.6f} секунд")
@@ -107,11 +171,4 @@ print(f"Время нахождения деобезличенного дата�
 print(f"Время расшифровки sha1 датасета и вычисления соли: {sha1_end_time - sha1_start_time:.6f} секунд")
 print(f"Время расшифровки sha256 датасета и вычисления соли: {sha256_end_time - sha256_start_time:.6f} секунд")
 print(f"Время расшифровки sha3 датасета и вычисления соли: {sha3_end_time - sha3_start_time:.6f} секунд")
-
-def test_time(salt, title,file_in_name, file_out_name):
-    start_time = time.time()
-    with open(file_out_name, 'w') as file:
-        pass
-    os.system(
-        f'hashcat -m 17400 -a 3 -o {file_in_name} {file_out_name} 89\?d\?d\?d\?d\?d\?d\?d\?d\?d --potfile-disable')
-    end_time = time.time()
+display_test_results(test_results)

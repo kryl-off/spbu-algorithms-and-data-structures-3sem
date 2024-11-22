@@ -53,6 +53,47 @@ def genetic_algorithm(population_size, generations, mutation_rate, gene_min, gen
 
     return best_solution, best_fitness, generation_data
 
+
+def genetic_algorithm_no_mod(population_size, generations, gene_min, gene_max, elite_size):
+    # Создание начальной популяции
+    population = make_population(population_size, gene_min, gene_max)
+    best_solution = None
+    best_fitness = float('inf')
+    generation_data = []
+
+    for generation in range(generations):
+        # Оценка пригодности (fitness) каждого индивида
+        fit_scores = np.array([function(ind) for ind in population])
+
+        # Выбор лучших особей (элит)
+        elites = choose_best_scores(population, fit_scores, elite_size)
+        new_population = list(elites)
+
+        # Пополнение новой популяции случайными элементами
+        while len(new_population) < population_size:
+            random_individual = np.random.uniform(low=gene_min, high=gene_max, size=len(population[0]))
+            new_population.append(random_individual)
+
+        population = np.array(new_population)
+
+        # Определение лучшего результата текущего поколения
+        current_best_fitness = np.min(fit_scores)
+        current_best_solution = population[np.argmin(fit_scores)]
+
+        generation_data.append(
+            (generation + 1, current_best_fitness, current_best_solution[0],
+             current_best_solution[1], current_best_solution[2])
+        )
+
+        # Обновление глобального лучшего результата
+        if current_best_fitness < best_fitness:
+            best_fitness = current_best_fitness
+            best_solution = current_best_solution
+
+    return best_solution, best_fitness, generation_data
+
+
+
 def create_gui():
     root = tk.Tk()
     root.title("Генетический алгоритм")
@@ -154,8 +195,29 @@ def create_gui():
             generation, fitness, x1, x2, x3 = data
             tree.insert("", "end", values=(generation, f"{fitness:.5f}", f"{x1:.5f}", f"{x2:.5f}", f"{x3:.5f}"))
 
-    ttk.Button(controls_frame, text="Рассчитать", command=calculate_mod).grid(pady=10)
+    def calculate_no_mod():
+        population_size = int(entries[2].get())
+        gene_min = float(entries[3].get())
+        gene_max = float(entries[4].get())
+        elite_size = int(entries[5].get())
+        generations = int(generations_entry.get())
 
+        best_solution, best_fitness, generation_data = genetic_algorithm_no_mod(
+            population_size, generations, gene_min, gene_max, elite_size
+        )
+
+        best_solution_label.config(
+            text=f"x1 = {best_solution[0]:.5f}, x2 = {best_solution[1]:.5f}, x3 = {best_solution[2]:.5f}")
+        best_fitness_label.config(text=f"{best_fitness:.5f}")
+
+        for i in tree.get_children():
+            tree.delete(i)
+
+        for data in generation_data:
+            generation, fitness, x1, x2, x3 = data
+            tree.insert("", "end", values=(generation, f"{fitness:.5f}", f"{x1:.5f}", f"{x2:.5f}", f"{x3:.5f}"))
+    ttk.Button(controls_frame, text="Рассчитать", command=calculate_mod).grid(pady=10)
+    ttk.Button(controls_frame, text="Рассчитать (без модификации)", command=calculate_no_mod).grid(pady=10)
     results_frame = ttk.LabelFrame(left_frame, text='Результаты')
     results_frame.grid(sticky='ew', pady=5)
     results_frame.columnconfigure(1, weight=1)
