@@ -332,10 +332,90 @@ def draw_graph(ax, edge_list, num_vertices, cycle_path=None, title="Graph"):
     ax.set_title(title)
     ax.axis('off')
 
+def ant_colony_optimization(graph, num_ants=20, num_iterations=100, decay=0.1, alpha=1, beta=2, elite_factor=0):
+
+    n = len(graph)
+    pheromone = [[1 for j in range(n)] for i in range(n)]
+    best_path = None
+    best_cost = float('inf')
+
+    def tour_cost(tour):
+        cost = 0
+        for i in range(len(tour) - 1):
+            w = graph[tour[i]][tour[i+1]]
+            if w == NO_EDGE:
+                return float('inf')
+            cost += w
+        return cost
+
+    for i in range(num_iterations):
+        tours = []
+        costs = []
+        for ant in range(num_ants):
+            start = random.randint(0, n - 1)
+            tour = [start]
+            visited = {start}
+            for step in range(n - 1):
+                curr = tour[-1]
+                choices = []
+                total_attractiveness = 0.0
+                for j in range(n):
+                    if j not in visited and graph[curr][j] != NO_EDGE:
+                        attractiveness = (pheromone[curr][j] ** alpha) * ((1.0 / graph[curr][j]) ** beta)
+                        choices.append((j, attractiveness))
+                        total_attractiveness += attractiveness
+                if total_attractiveness == 0:
+                    break
+                r = random.uniform(0, total_attractiveness)
+                cumulative = 0.0
+                next_vertex = None
+                for j, attractiveness in choices:
+                    cumulative += attractiveness
+                    if cumulative >= r:
+                        next_vertex = j
+                        break
+                if next_vertex is None:
+                    break
+                tour.append(next_vertex)
+                visited.add(next_vertex)
+            tour.append(start)
+            cost = tour_cost(tour)
+            tours.append(tour)
+            costs.append(cost)
+            if cost < best_cost:
+                best_cost = cost
+                best_path = tour[:]
+
+        # испарение феромона
+        for i in range(n):
+            for j in range(n):
+                pheromone[i][j] *= (1 - decay)
+        
+        # осаждение
+        for tour, cost in zip(tours, costs):
+            if cost == float('inf'):
+                continue
+            deposit = 1.0 / cost
+            for i in range(len(tour) - 1):
+                a, b = tour[i], tour[i+1]
+                pheromone[a][b] += deposit
+                pheromone[b][a] += deposit  # если граф неориентированный
+        
+        # модификация
+        if elite_factor > 0 and best_path is not None and best_cost != 0:
+            elite_deposit = elite_factor / best_cost
+            for i in range(len(best_path) - 1):
+                a, b = best_path[i], best_path[i+1]
+                pheromone[a][b] += elite_deposit
+                pheromone[b][a] += elite_deposit
+
+    return best_path, best_cost
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Лабораторная работа: Задача о коммивояжере")
+        self.setWindowTitle("Задача о коммивояжере")
         self.num_vertices = 3
         self.default_edges = [
             (0, 1, 5), (1, 0, 6), (0, 2, 8), (2, 0, 7), (1, 2, 4), (2, 1, 9)
@@ -490,7 +570,65 @@ class MainWindow(QMainWindow):
         self.aco_tab = QWidget()
         aco_layout = QVBoxLayout()
         self.aco_tab.setLayout(aco_layout)
-        aco_layout.addWidget(QLabel("Муравьиный будет добавлен позже."))
+
+        # Параметры АКО
+        self.aco_num_ants_spinbox = QSpinBox()
+        self.aco_num_ants_spinbox.setMinimum(1)
+        self.aco_num_ants_spinbox.setMaximum(1000)
+        self.aco_num_ants_spinbox.setValue(20)
+
+        self.aco_num_iterations_spinbox = QSpinBox()
+        self.aco_num_iterations_spinbox.setMinimum(1)
+        self.aco_num_iterations_spinbox.setMaximum(10000)
+        self.aco_num_iterations_spinbox.setValue(100)
+
+        self.aco_decay_spinbox = QDoubleSpinBox()
+        self.aco_decay_spinbox.setMinimum(0.0)
+        self.aco_decay_spinbox.setMaximum(1.0)
+        self.aco_decay_spinbox.setSingleStep(0.01)
+        self.aco_decay_spinbox.setValue(0.1)
+
+        self.aco_alpha_spinbox = QDoubleSpinBox()
+        self.aco_alpha_spinbox.setMinimum(0.0)
+        self.aco_alpha_spinbox.setMaximum(10.0)
+        self.aco_alpha_spinbox.setSingleStep(0.1)
+        self.aco_alpha_spinbox.setValue(1)
+
+        self.aco_beta_spinbox = QDoubleSpinBox()
+        self.aco_beta_spinbox.setMinimum(0.0)
+        self.aco_beta_spinbox.setMaximum(10.0)
+        self.aco_beta_spinbox.setSingleStep(0.1)
+        self.aco_beta_spinbox.setValue(2)
+
+        # Выбор режима ACO: "Обычные" или "Элитные"
+        self.aco_mode_combobox = QComboBox()
+        self.aco_mode_combobox.addItems(["Обычные", "Элитные"])
+        self.aco_mode_combobox.currentIndexChanged.connect(self.update_aco_elite_visibility)
+
+        # Elite factor (активен только для режима "Элитные")
+        self.aco_elite_factor_spinbox = QDoubleSpinBox()
+        self.aco_elite_factor_spinbox.setMinimum(0.0)
+        self.aco_elite_factor_spinbox.setMaximum(10.0)
+        self.aco_elite_factor_spinbox.setSingleStep(0.1)
+        self.aco_elite_factor_spinbox.setValue(1.0)
+        self.aco_elite_factor_spinbox.setEnabled(False)  # по умолчанию отключено, если выбраны "Обычные"
+
+        # Добавляем виджеты на вкладку ACO:
+        aco_layout.addWidget(QLabel("Число муравьев:"))
+        aco_layout.addWidget(self.aco_num_ants_spinbox)
+        aco_layout.addWidget(QLabel("Число итераций:"))
+        aco_layout.addWidget(self.aco_num_iterations_spinbox)
+        aco_layout.addWidget(QLabel("Коэффициент испарения (decay):"))
+        aco_layout.addWidget(self.aco_decay_spinbox)
+        aco_layout.addWidget(QLabel("Показатель влияния феромона (alpha):"))
+        aco_layout.addWidget(self.aco_alpha_spinbox)
+        aco_layout.addWidget(QLabel("Показатель влияния эвристики (beta):"))
+        aco_layout.addWidget(self.aco_beta_spinbox)
+        aco_layout.addWidget(QLabel("Режим ACO:"))
+        aco_layout.addWidget(self.aco_mode_combobox)
+        aco_layout.addWidget(QLabel("Elite Factor (для Элитных):"))
+        aco_layout.addWidget(self.aco_elite_factor_spinbox)
+
         self.tabs.addTab(self.aco_tab, "ACO")
 
         # Кнопка рассчитать
@@ -517,6 +655,14 @@ class MainWindow(QMainWindow):
         else:
             self.sa_manual_path_lineedit.setEnabled(False)
             self.sa_manual_path_lineedit.clear()
+
+    def update_aco_elite_visibility(self):
+        if self.aco_mode_combobox.currentText() == "Элитные":
+            self.aco_elite_factor_spinbox.setEnabled(True)
+        else:
+            self.aco_elite_factor_spinbox.setEnabled(False)
+            self.aco_elite_factor_spinbox.setValue(0)  # для обычного режима elite_factor=0
+
 
     def change_vertex_count(self, value):
         self.num_vertices = value
@@ -698,8 +844,30 @@ class MainWindow(QMainWindow):
             sa_paths_log = initial_path_str + " | " + final_path_str
 
         elif current_tab == self.aco_tab:
-            QMessageBox.information(self, "Информация", "Алгоритм ACO ещё не реализован!")
-            return
+            num_ants = self.aco_num_ants_spinbox.value()
+            num_iterations = self.aco_num_iterations_spinbox.value()
+            decay = self.aco_decay_spinbox.value()
+            alpha_val = self.aco_alpha_spinbox.value()
+            beta_val = self.aco_beta_spinbox.value()
+            mode = self.aco_mode_combobox.currentText()
+            if mode == "Элитные":
+                elite_factor = self.aco_elite_factor_spinbox.value()
+            else:
+                elite_factor = 0  # для обычного алгоритма elite_factor=0 (т.е. без элитной модификации)
+
+            path_str, total_distance = ant_colony_optimization(
+                graph_matrix,
+                num_ants=num_ants,
+                num_iterations=num_iterations,
+                decay=decay,
+                alpha=alpha_val,
+                beta=beta_val,
+                elite_factor=elite_factor
+            )
+            mod_type_str = (f"ACO: {mode} муравьи, антов: {num_ants}, итераций: {num_iterations}, "
+                            f"decay={decay}, alpha={alpha_val}, beta={beta_val}, elite_factor={elite_factor}")
+            cycle_path = path_str
+            
         else:
             cycle_path, total_distance = None, None
             mod_type_str = "Не определён"
