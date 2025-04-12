@@ -6,4 +6,8 @@ venv/
 .venv
 #files
 otus.txt
-laba1/__pycache__
+3sem/laba1/__pycache__
+nearest_neighbor_log.txt
+4sem/graph.py
+4sem/laba2.py
+4sem/data/directed_graph_edges.txt
