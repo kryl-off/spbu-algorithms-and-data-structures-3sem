@@ -399,9 +399,9 @@ def ant_colony_optimization(graph, num_ants=20, num_iterations=100, decay=0.1, a
             for i in range(len(tour) - 1):
                 a, b = tour[i], tour[i+1]
                 pheromone[a][b] += deposit
-                pheromone[b][a] += deposit  # если граф неориентированный
+                pheromone[b][a] += deposit
         
-        # модификация
+        # модификация 
         if elite_factor > 0 and best_path is not None and best_cost != 0:
             elite_deposit = elite_factor / best_cost
             for i in range(len(best_path) - 1):
